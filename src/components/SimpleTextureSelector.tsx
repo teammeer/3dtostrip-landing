@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Check, Image as ImageIcon } from "lucide-react";
+import { X, Check } from "lucide-react";
 
 interface SimpleTextureSelectorProps {
   textures: File[];

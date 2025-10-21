@@ -1,18 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import SimpleSpriteStripViewer from "@/components/SpriteStripViewer";
+import { SpriteStripViewer } from "@teammeer.com/3dtostrip";
 import SimpleTextureSelector from "@/components/SimpleTextureSelector";
-import { useSpriteStripGenerator } from "@/hooks/useSpriteStripGenerator";
+import { useSpriteStripGenerator } from "@teammeer.com/3dtostrip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useFileUpload } from "@/hooks/use-file-upload";
-import { AlertCircleIcon, ImageIcon, UploadIcon, XIcon, Globe, Github } from "lucide-react";
+import { AlertCircleIcon, ImageIcon, UploadIcon } from "lucide-react";
 
 // Texture Upload Component
-function TextureUploadArea({ onTexturesChange, textures }: { onTexturesChange: (textures: File[]) => void; textures: File[] }) {
+function TextureUploadArea({ onTexturesChange }: { onTexturesChange: (textures: File[]) => void; textures: File[] }) {
   const maxSizeMB = 5;
   const maxSize = maxSizeMB * 1024 * 1024;
   const maxFiles = 10;
@@ -26,7 +26,6 @@ function TextureUploadArea({ onTexturesChange, textures }: { onTexturesChange: (
       handleDragOver,
       handleDrop,
       openFileDialog,
-      removeFile,
       getInputProps,
     },
   ] = useFileUpload({
@@ -47,7 +46,7 @@ function TextureUploadArea({ onTexturesChange, textures }: { onTexturesChange: (
       onTexturesChange(fileObjects);
       prevFilesRef.current = currentFileIds;
     }
-  }, [files]); // Remove onTexturesChange from dependencies
+  }, [files, onTexturesChange]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -131,7 +130,6 @@ export default function Home() {
 
   const {
     generateSpriteStrip,
-    applyTextureFromFile,
     isGenerating,
     progress,
     generatedData,
@@ -139,18 +137,15 @@ export default function Home() {
     // Texture management from hook
     textures,
     selectedTexture,
-    textureApplied,
     addTextures,
-    removeTexture,
-    clearAllTextures,
-    selectTexture,
-    applySelectedTexture,
-    getTexturePreview
+    selectTexture
   } = useSpriteStripGenerator({
     ratio,
     backgroundColor,
-    lightingIntensity,
-    ambientIntensity,
+    lighting: {
+      ambientLight: { intensity: ambientIntensity },
+      directionalLight: { intensity: lightingIntensity, position: { x: 2, y: 2, z: 2 } }
+    },
     maxTextures: 10,
     acceptedFormats: ['.png', '.jpg', '.jpeg', '.webp']
   });
@@ -164,19 +159,6 @@ export default function Home() {
     await generateSpriteStrip(file, textureToUse ?? undefined);
   };
 
-  const handleLegacyApplyTexture = async () => {
-    if (!texture) {
-      console.warn('[SpriteGen] Apply Texture clicked but no texture file selected');
-      return;
-    }
-    console.log('[SpriteGen] Apply Texture button clicked');
-    try {
-      await applyTextureFromFile(texture);
-      console.log('[SpriteGen] Texture applied successfully');
-    } catch (e) {
-      console.error('[SpriteGen] Apply Texture failed', e);
-    }
-  };
 
   const handleTexturesChange = (newTextures: File[]) => {
     addTextures(newTextures);
@@ -339,13 +321,12 @@ export default function Home() {
             {generatedData?.spriteStripUrl ? (
               <>
                 <div
-                  className={`w-full border rounded overflow-hidden ${getAspectRatioClass(generatedData.ratio)}`}
+                  className={`w-full border rounded overflow-hidden ${getAspectRatioClass(generatedData.ratio || '16:9')}`}
                   style={{ backgroundColor: backgroundColor }}
                 >
-                  <SimpleSpriteStripViewer
+                  <SpriteStripViewer
                     spriteStripUrl={generatedData.spriteStripUrl}
-                    ratio={generatedData.ratio}
-                    showControls
+                    ratio={generatedData.ratio as '16:9' | '4:3' | '1:1' | 'auto'}
                   />
                 </div>
                 <div className="mt-4">
@@ -363,10 +344,9 @@ export default function Home() {
                 className="w-full border rounded overflow-hidden aspect-[4/3]"
                 style={{ backgroundColor: '#f3f4f6' }}
               >
-                <SimpleSpriteStripViewer
+                <SpriteStripViewer
                   spriteStripUrl="/assassin.png"
                   ratio="4:3"
-                  showControls
                 />
               </div>
             )}

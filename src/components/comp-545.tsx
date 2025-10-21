@@ -25,7 +25,7 @@ export default function Component() {
     maxSize,
   })
   const previewUrl = files[0]?.preview || null
-  const fileName = files[0]?.file.name || null
+  // const fileName = files[0]?.file.name || null
 
   return (
     <div className="flex flex-col gap-2">
